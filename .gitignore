@@ -1,0 +1,4 @@
+**/node_modules
+**/dist
+server/tsconfig/tsbuildinfo
+server/index-copy
