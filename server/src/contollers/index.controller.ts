@@ -29,15 +29,6 @@ const isValidPrice = (price: Decimal): boolean => {
 
 // ================ API Endpoints ================
 
-const apiTest = async (req: Request, res: Response): Promise<void> => {
-  try {
-    res.status(200).json({ msg: "API is up and running" });
-  } catch (error) {
-    console.error("API test error:", error);
-    res.status(500).json({ msg: "Internal server error" });
-  }
-  return Promise.resolve();
-};
 
 const resetData = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -858,7 +849,6 @@ async function initializeDummyData(): Promise<void> {
 }
 
 export {
-  apiTest,
   resetData,
   createUser,
   createSymbol,
