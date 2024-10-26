@@ -24,7 +24,6 @@ describe("Trading System Tests", () => {
     return new Promise((resolve) => {
       ws.once("message", (data) => {
         const parsedData = JSON.parse(data);
-        // console.log(parsedData)
         resolve(parsedData);
       });
     });
@@ -74,7 +73,7 @@ describe("Trading System Tests", () => {
       })
     );
 
-    const promisified = waitForWSMessage()
+    const promisified = waitForWSMessage();
 
     const buyOrderResponse = await axios.post(`${HTTP_SERVER_URL}/order/buy`, {
       userId,
@@ -118,8 +117,7 @@ describe("Trading System Tests", () => {
       })
     );
 
-
-    const promisified = waitForWSMessage()
+    const promisified = waitForWSMessage();
     const sellOrderResponse = await axios.post(
       `${HTTP_SERVER_URL}/order/sell`,
       {
@@ -169,7 +167,7 @@ describe("Trading System Tests", () => {
 
     await ws.send(JSON.stringify({ type: "subscribe", stockSymbol: symbol }));
 
-    const promisified = waitForWSMessage()
+    const promisified = waitForWSMessage();
     await axios.post(`${HTTP_SERVER_URL}/order/sell`, {
       userId: sellerId,
       stockSymbol: symbol,
@@ -178,10 +176,9 @@ describe("Trading System Tests", () => {
       stockType: "yes",
     });
 
-    
     await promisified;
 
-    const promisified2 = waitForWSMessage()
+    const promisified2 = waitForWSMessage();
 
     await axios.post(`${HTTP_SERVER_URL}/order/buy`, {
       userId: buyerId,
@@ -191,7 +188,7 @@ describe("Trading System Tests", () => {
       stockType: "yes",
     });
 
-    const executionWsMessage = await promisified2
+    const executionWsMessage = await promisified2;
 
     expect(executionWsMessage.event).toBe("event_orderbook_update");
     expect(executionWsMessage.yes?.[price / 100]).toBeUndefined();
@@ -205,7 +202,7 @@ describe("Trading System Tests", () => {
 
     expect(buyerStockBalance.data.msg[symbol].yes.quantity).toBe(quantity);
     expect(sellerInrBalance.data.msg.balance).toBe(price * quantity);
-  },15000);
+  }, 15000);
 
   test("Execute minting opposite orders with higher quantity and check WebSocket response", async () => {
     const buyerId = "buyer1";
@@ -238,9 +235,9 @@ describe("Trading System Tests", () => {
       stockType: "yes",
     });
 
-    await promisified
+    await promisified;
 
-    const promisified2 = waitForWSMessage()
+    const promisified2 = waitForWSMessage();
 
     await axios.post(`${HTTP_SERVER_URL}/order/buy`, {
       userId: buyer2Id,
@@ -250,7 +247,7 @@ describe("Trading System Tests", () => {
       stockType: "no",
     });
 
-    const executionWsMessage = await promisified2
+    const executionWsMessage = await promisified2;
 
     const message = JSON.parse(executionWsMessage.message);
 
@@ -265,7 +262,7 @@ describe("Trading System Tests", () => {
         },
       },
     });
-  },15000);
+  }, 15000);
 
   test("Execute buying stocks from multiple users and check WebSocket response", async () => {
     const buyerId = "buyer1";
@@ -293,8 +290,8 @@ describe("Trading System Tests", () => {
     });
 
     await ws.send(JSON.stringify({ type: "subscribe", stockSymbol: symbol }));
-    
-    const promisified = waitForWSMessage()
+
+    const promisified = waitForWSMessage();
 
     axios.post(`${HTTP_SERVER_URL}/order/buy`, {
       userId: buyerId,
@@ -306,7 +303,7 @@ describe("Trading System Tests", () => {
 
     await promisified;
 
-    const promisified2 = waitForWSMessage()
+    const promisified2 = waitForWSMessage();
     axios.post(`${HTTP_SERVER_URL}/order/buy`, {
       userId: buyer2Id,
       stockSymbol: symbol,
@@ -317,7 +314,7 @@ describe("Trading System Tests", () => {
 
     await promisified2;
 
-    const promisified3 = waitForWSMessage()
+    const promisified3 = waitForWSMessage();
     axios.post(`${HTTP_SERVER_URL}/order/buy`, {
       userId: buyer3Id,
       stockSymbol: symbol,
@@ -413,7 +410,7 @@ describe("Trading System Tests", () => {
 
     await ws.send(JSON.stringify({ type: "subscribe", stockSymbol: symbol }));
 
-    const promisified = waitForWSMessage()
+    const promisified = waitForWSMessage();
 
     await axios.post(`${HTTP_SERVER_URL}/order/sell`, {
       userId: seller1Id,
@@ -425,7 +422,7 @@ describe("Trading System Tests", () => {
 
     await promisified;
 
-    const promisified2 = waitForWSMessage()
+    const promisified2 = waitForWSMessage();
     await axios.post(`${HTTP_SERVER_URL}/order/sell`, {
       userId: seller2Id,
       stockSymbol: symbol,
@@ -436,7 +433,7 @@ describe("Trading System Tests", () => {
 
     await promisified2;
 
-    const promisified3 =waitForWSMessage()
+    const promisified3 = waitForWSMessage();
 
     await axios.post(`${HTTP_SERVER_URL}/order/sell`, {
       userId: seller3Id,
@@ -490,5 +487,5 @@ describe("Trading System Tests", () => {
     expect(seller3InrBalance.data.msg.balance).toBe(
       sell3Price * (quantity3 - 10)
     );
-  },20000);
+  }, 20000);
 });
