@@ -1,55 +1,128 @@
 import express from "express";
 import allRoutes from "./routes/index.route";
+import { WebSocket, WebSocketServer } from "ws";
 import { createClient } from "redis";
-import { wsService } from './services/websocket.service';
-import cors from 'cors';
+import cors from "cors";
 
 const app = express();
-export const redisClient = createClient();
-export const subscriber = createClient();
+
+export const redisClient = createClient({
+  url: "redis://localhost:6379",
+});
+
+export const subscriber = createClient({
+  url: "redis://localhost:6379",
+});
+
 export const requestQueue = "requestQueue";
-export const responseQueue = "responseQueue";
 
 app.use(cors());
 app.use(express.json());
-
 app.use("/", allRoutes);
 
-// Subscribe to Redis updates
+// WebSocket server setup
+const wss = new WebSocketServer({ port: 8085 });
+
+// Store subscriptions
+const subscriptions = new Map<string, Set<WebSocket>>();
+
+// WebSocket server connection handling
+wss.on("connection", (ws) => {
+  console.log("New client connected");
+
+  ws.on("message", (data) => {
+    try {
+      const message = JSON.parse(data.toString());
+      if (message.type === "subscribe" && message.stockSymbol) {
+        // Add to subscriptions
+        if (!subscriptions.has(message.stockSymbol)) {
+          subscriptions.set(message.stockSymbol, new Set());
+        }
+        subscriptions.get(message.stockSymbol)?.add(ws);
+        console.log(`Client subscribed to ${message.stockSymbol}`);
+      }
+    } catch (error) {
+      console.error("Error processing WebSocket message:", error);
+    }
+  });
+
+  ws.on("close", () => {
+    // Remove from all subscriptions
+    subscriptions.forEach((subscribers) => {
+      subscribers.delete(ws);
+    });
+    console.log("Client disconnected");
+  });
+
+  ws.on("error", (error) => {
+    console.error("WebSocket error:", error);
+  });
+});
+
+// Handle Redis subscriber messages
 subscriber.subscribe("updates", (message) => {
   try {
     const data = JSON.parse(message);
     if (data.stockSymbol) {
-      wsService.broadcast(data.stockSymbol, {
-        event: "event_orderbook_update",
-        message: JSON.stringify(data)
-      });
+      const subscribers = subscriptions.get(data.stockSymbol);
+      if (subscribers) {
+        const updateMessage = JSON.stringify({
+          event: "event_orderbook_update",
+          message: JSON.stringify(data),
+        });
+
+        subscribers.forEach((client) => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(updateMessage);
+          }
+        });
+      }
     }
   } catch (error) {
-    console.error('Error processing Redis message:', error);
+    console.error("Error broadcasting message:", error);
   }
 });
 
+// Redis error handling
+redisClient.on("error", (error) => {
+  console.error("Redis Client Error:", error);
+});
+
+subscriber.on("error", (error) => {
+  console.error("Redis Subscriber Error:", error);
+});
+
+// Server startup
 async function startServer() {
   try {
     await redisClient.connect();
     await subscriber.connect();
-    console.log("Connected to Redis");
+    console.log("Connected to Redis successfully");
 
-    app.listen(3005, () => {
-      console.log("Server is running on port 3005");
+    const port = 3005;
+    app.listen(port, () => {
+      console.log(`HTTP Server is running on port ${port}`);
+      console.log(`WebSocket Server is running on port 8085`);
     });
   } catch (error) {
-    console.error("Failed to connect to Redis", error);
+    console.error("Failed to connect to Redis:", error);
     process.exit(1);
   }
 }
 
-process.on('SIGTERM', () => {
-  wsService.close();
-  redisClient.quit();
-  subscriber.quit();
+process.on("SIGTERM", async () => {
+  console.log("Shutting down gracefully...");
+  wss.close(() => {
+    console.log("WebSocket server closed");
+  });
+  await redisClient.quit();
+  await subscriber.quit();
   process.exit(0);
 });
 
-startServer();
+startServer().catch((error) => {
+  console.error("Server startup failed:", error);
+  process.exit(1);
+});
+
+export default app;

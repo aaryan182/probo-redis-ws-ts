@@ -1,34 +1,42 @@
-import { Router } from "express";
+import { Router, Request, Response } from 'express';
 import {
-  buyStock,
   createSymbol,
   createUser,
   getINRBalance,
   getStockBalance,
-  getINRBalance as getAllINRBalance,
-  getStockBalance as getAllStockBalance,
-  mintTokens,
+  getAllINRBalance,
+  getAllStockBalance,
   onrampINR,
-  resetData,
-  placeSellOrder,
   viewIndividualOrderbook,
   viewOrderbook,
+  buyStock,
+  placeSellOrder,
+  resetData,
+  mintTokens
 } from "../contollers/index.controller";
 
 const router: Router = Router();
 
-router.post("/user/create/:userId", createUser);
-router.post("/symbol/create/:stockSymbol", createSymbol);
-router.get("/orderbook", viewOrderbook);
-router.get("/balances/inr", getAllINRBalance);
-router.get("/balances/stock", getAllStockBalance);
-router.post("/reset", resetData);
-router.get("/balance/inr/:userId", getINRBalance);
-router.post("/onramp/inr", onrampINR);
-router.get("/balance/stock/:userId", getStockBalance);
-router.post("/order/buy", buyStock);
-router.post("/order/sell", placeSellOrder);
-router.get("/orderbook/:stockSymbol", viewIndividualOrderbook);
-router.post("/trade/mint", mintTokens);
+// Define route handler type
+type RouteHandler = (req: Request, res: Response) => Promise<void>;
+
+router.post("/user/create/:userId", createUser as RouteHandler);
+
+router.post("/symbol/create/:stockSymbol", createSymbol as RouteHandler);
+
+router.get("/orderbook", viewOrderbook as RouteHandler);
+router.get("/orderbook/:stockSymbol", viewIndividualOrderbook as RouteHandler);
+
+router.get("/balances/inr", getAllINRBalance as RouteHandler);
+router.get("/balances/stock", getAllStockBalance as RouteHandler);
+router.get("/balance/inr/:userId", getINRBalance as RouteHandler);
+router.get("/balance/stock/:userId", getStockBalance as RouteHandler);
+
+router.post("/order/buy", buyStock as RouteHandler);
+router.post("/order/sell", placeSellOrder as RouteHandler);
+router.post("/trade/mint", mintTokens as RouteHandler);
+
+router.post("/onramp/inr", onrampINR as RouteHandler);
+router.post("/reset", resetData as RouteHandler);
 
 export default router;
