@@ -20,10 +20,8 @@ app.use(cors());
 app.use(express.json());
 app.use("/", allRoutes);
 
-// WebSocket server setup
 const wss = new WebSocketServer({ port: 8085 });
 
-// Store subscriptions
 const subscriptions = new Map<string, Set<WebSocket>>();
 
 // WebSocket server connection handling
@@ -47,7 +45,6 @@ wss.on("connection", (ws) => {
   });
 
   ws.on("close", () => {
-    // Remove from all subscriptions
     subscriptions.forEach((subscribers) => {
       subscribers.delete(ws);
     });
